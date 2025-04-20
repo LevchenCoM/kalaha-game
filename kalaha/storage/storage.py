@@ -7,6 +7,9 @@ __all__ = ("Storage",)
 
 
 class Storage(Singleton):
+    """
+    Simple In-memory storage implementation.
+    """
     def __init__(self):
         if not hasattr(self, "_storage_map"):
             self._storage_map = dict()

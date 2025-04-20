@@ -8,7 +8,8 @@ It's browser based web application with simple UI.
 - pip or uv (package manager)
 - fastapi (framework)
 
-### Frontend:- Static HTML file hosted on the backend, running in the browser.
+### Frontend:
+- Static HTML file hosted on the backend, running in the browser.
 
 
 ## Launch Instructions
