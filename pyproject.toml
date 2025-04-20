@@ -1,0 +1,11 @@
+[project]
+name = "kalaha"
+version = "0.1.0"
+description = "Kalaha game"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "black>=25.1.0",
+    "fastapi[standard]>=0.115.12",
+    "pytest>=8.3.5",
+]

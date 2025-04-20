@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalaha Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 100px repeat(6, 80px) 100px;
+      grid-template-rows: 80px 80px;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .pit, .store {
+      background-color: #f4f4f4;
+      border: 2px solid #aaa;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 1.2em;
+      width: 80px;
+      height: 80px;
+      cursor: pointer;
+    }
+
+    .store {
+      background-color: #ddd;
+      border-radius: 10px;
+      height: 170px;
+      cursor: default;
+      margin-top: auto;
+    }
+
+    .player-label {
+      margin: 10px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1.1em;
+      color: #333;
+    }
+
+    #new-game-btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      font-weight: bold;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+    }
+
+    #new-game-btn:hover {
+      background-color: #45a049;
+    }
+
+    .move-log {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .move-log-item {
+      padding: 5px;
+      font-size: 1em;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-label">Player 2</div>
+
+  <div class="board" id="kalaha-board"></div>
+
+  <div class="player-label">Player 1</div>
+
+  <div class="message" id="message"></div>
+  <button id="new-game-btn" onclick="startNewGame()">New Game</button>
+
+  <!-- Move Log Section -->
+  <div class="move-log" id="move-log">
+    <div><strong>Move Log:</strong></div>
+    <!-- Move items will be appended here -->
+  </div>
+
+  <script>
+    async function fetchBoard() {
+      const res = await fetch('/game/board');
+      return res.json();
+    }
+
+    async function makeMove(pitId) {
+      const res = await fetch('/game/make_move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pit_id: pitId })
+      });
+      return res.json();
+    }
+
+    async function startNewGame() {
+      const res = await fetch('/game/new_game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const newGameData = await res.json();
+      renderBoard(newGameData);
+    }
+
+    function createPit(pit, currentPlayerId) {
+      const el = document.createElement('div');
+      el.className = 'pit';
+      el.textContent = pit.count;
+      el.id = `pit-${pit.id}`;
+      if (pit.player_id === currentPlayerId) {
+        el.onclick = async () => {
+          const updatedBoard = await makeMove(pit.id);
+          renderBoard(updatedBoard);
+        };
+      } else {
+        el.style.cursor = 'default';
+      }
+      return el;
+    }
+
+    function createStore(count) {
+      const el = document.createElement('div');
+      el.className = 'store';
+      el.textContent = count;
+      return el;
+    }
+
+    function updateMoveLog(moveLogs, players) {
+      const moveLogEl = document.getElementById('move-log');
+      moveLogEl.innerHTML = '<div><strong>Move Log:</strong></div>'; // Clear and add title
+
+      // Sort the move logs by ID in descending order (latest first)
+      moveLogs.sort((a, b) => b.id - a.id);
+
+      moveLogs.forEach(log => {
+        const logItem = document.createElement('div');
+        logItem.className = 'move-log-item';
+        const player = players.find(p => p.id === log.player_id);
+        logItem.textContent = `Move ID: ${log.id} - ${player.name} moved from pit ${log.pit_id + 1}`; // Display move ID and pit number as 1-indexed
+        moveLogEl.appendChild(logItem);
+      });
+    }
+
+    function renderBoard(data) {
+      const board = document.getElementById('kalaha-board');
+      board.innerHTML = '';
+
+      const pits = data.pits;
+      const stores = data.large_pits;
+      const players = data.players;
+      const gameInfo = data.game_info;
+      const currentPlayer = gameInfo.next_player_id;
+      const winnerId = gameInfo.winner_id;
+      const draw = gameInfo.draw;
+
+      const messageEl = document.getElementById('message');
+      const newGameBtn = document.getElementById('new-game-btn');
+
+      if (draw) {
+        messageEl.textContent = "🤝 It's a draw!";
+        newGameBtn.style.display = 'inline-block';
+      } else if (winnerId !== null) {
+        const winnerName = players.find(p => p.id === winnerId).name;
+        messageEl.textContent = `🎉 ${winnerName} wins!`;
+        newGameBtn.style.display = 'inline-block';
+      } else {
+        const currentName = players.find(p => p.id === currentPlayer).name;
+        messageEl.textContent = `⏳ ${currentName}'s turn`;
+        newGameBtn.style.display = 'none';
+      }
+
+      // Player 2's store (left)
+      board.appendChild(createStore(stores[1].count));
+
+      // Player 2's pits (top row)
+      for (let i = 11; i >= 6; i--) {
+        board.appendChild(createPit(pits[i], currentPlayer));
+      }
+
+      // Player 1's store (right)
+      board.appendChild(createStore(stores[0].count));
+
+      // Bottom row alignment
+      board.appendChild(document.createElement('div'));
+
+      // Player 1's pits (bottom row)
+      for (let i = 0; i <= 5; i++) {
+        board.appendChild(createPit(pits[i], currentPlayer));
+      }
+
+      board.appendChild(document.createElement('div'));
+
+      // Update move log
+      updateMoveLog(data.move_logs, players);
+    }
+
+    fetchBoard().then(renderBoard);
+  </script>
+
+</body>
+</html>
