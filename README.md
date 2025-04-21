@@ -1,5 +1,7 @@
 # Kalaha Game
 
+![App Screenshot](assets/screenshot.png)
+
 ## Tech Stack
 It's browser based web application with simple UI.
 
@@ -70,7 +72,7 @@ several times before it's the other player's turn.
 #### Capturing Stones
 During the game the pits are emptied on both sides. Always when the last stone
 lands in an own empty pit, the player captures his own stone and all stones in the
-opposite pit (the other player’s pit) and puts them in his own (big or little?) pit.
+opposite pit (the other player’s pit) and puts them in his own big pit.
 
 #### The Game Ends
 The game is over as soon as one of the sides runs out of stones. The player who
